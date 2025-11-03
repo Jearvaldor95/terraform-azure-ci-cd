@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.accenture</groupId>
-	<artifactId>test-accenture</artifactId>
+	<artifactId>accenture-terraform</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>test-accenture</name>
 	<description>Technical Test - Backend Developer</description>
