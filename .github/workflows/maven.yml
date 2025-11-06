@@ -1,66 +1,94 @@
-name: Java CI/CD to Azure Web App
+name: CI/CD - Terraform + Azure
 
 on:
   push:
-    branches:
-      - main
+    branches: ["main"]
 
 jobs:
-  build-and-deploy:
+  # CI - Compilación y pruebas
+  ci:
     runs-on: ubuntu-latest
 
-    # Variables de entorno
-    env:
-      R2DBC_URL: ${{ secrets.R2DBC_URL }}
-      USERNAME_DEV: ${{ secrets.USERNAME_DEV }}
-      PASSWORD_DEV: ${{ secrets.PASSWORD_DEV }}
-      SPRING_PROFILES_ACTIVE: dev
-
     steps:
-      # 1️ Clonar repo
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      # 2️ Configurar JDK 17
-      - name: Set up JDK 17
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
           distribution: 'temurin'
+          java-version: '17'
           cache: maven
 
-      # 3️ Build y test Maven
       - name: Build with Maven
-        run: mvn clean install
+        run: mvn clean install -DskipTests
 
       - name: Run Tests
         run: mvn test
 
-      # 4️ Login a Azure (Service Principal)
-      - name: Login to Azure
+  # 2️ Terraform - Infraestructura (solo si CI pasa)
+  terraform:
+    needs: ci
+    runs-on: ubuntu-latest
+    env:
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      TF_VAR_db_user: ${{ secrets.DB_USER }}
+      TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.0
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ./terraform
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: ./terraform
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+        working-directory: ./terraform
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+        working-directory: ./terraform
+
+  # 3️ CD - Despliegue (solo si Terraform pasa)
+  deploy:
+    needs: terraform
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login Azure
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 5️ Login a ACR
       - name: Login to Azure Container Registry
         run: |
-          echo ${{ secrets.ACR_PASSWORD }} | docker login accentureacr.azurecr.io -u ${{ secrets.ACR_USERNAME }} --password-stdin
+          echo ${{ secrets.ACR_PASSWORD }} | docker login terraform-jearvaldor.azurecr.io -u ${{ secrets.ACR_USERNAME }} --password-stdin
 
-      # 6️ Build Docker image
       - name: Build Docker image
-        run: docker build -t accentureacr.azurecr.io/test-accenture:latest .
+        run: docker build -t terraform-jearvaldor:latest .
 
-      # 7️ Push Docker image
       - name: Push Docker image
-        run: docker push accentureacr.azurecr.io/test-accenture:latest
+        run: docker push terraform-jearvaldor:latest
 
-      # 8️ Deploy en Azure Web App usando la nueva sintaxis
       - name: Deploy to Azure Web App
-        run: |
-         az webapp config container set \
-            --name test-accenture-app \
-            --resource-group test-accenture-rg \
-            --container-image-name accentureacr.azurecr.io/test-accenture:latest \
-            --container-registry-url https://accentureacr.azurecr.io \
-            --container-registry-user ${{ secrets.ACR_USERNAME }} \
-            --container-registry-password ${{ secrets.ACR_PASSWORD }}
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.APP_NAME }}
+          images: ${{ secrets.ACR_LOGIN_SERVER }}/terraform-jearvaldor:latest
