@@ -9,6 +9,12 @@ jobs:
   ci:
     runs-on: ubuntu-latest
 
+    env:
+      R2DBC_URL: ${{ secrets.R2DBC_URL }}
+      USERNAME_DEV: ${{ secrets.USERNAME_PROD }}
+      PASSWORD_DEV: ${{ secrets.PASSWORD_PROD }}
+      SPRING_PROFILES_ACTIVE: prod
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
