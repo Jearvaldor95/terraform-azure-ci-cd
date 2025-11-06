@@ -35,16 +35,20 @@ resource "azurerm_linux_web_app" "app" {
 
   site_config {
       application_stack {
-        docker_image     = var.docker_image
+        docker_image     = "${azurerm_container_registry.acr.login_server}/${var.docker_image}"
         docker_image_tag = var.docker_tag
      }
   }
   app_settings = {
     WEBSITES_PORT          = var.app_port
     SPRING_PROFILES_ACTIVE = "prod"
-    USERNAME_DEV           = var.db_user
-    PASSWORD_DEV           = var.db_password
+    USERNAME_PROD           = var.db_user
+    PASSWORD_PROD           = var.db_password
     R2DBC_URL              = "r2dbc:mysql://${var.db_user}:${var.db_password}@${azurerm_mysql_flexible_server.db.fqdn}:3306/${var.app_name}"
+    DOCKER_REGISTRY_SERVER_URL    = "https://${azurerm_container_registry.acr.login_server}"
+    DOCKER_REGISTRY_SERVER_USERNAME = var.acr_username
+    DOCKER_REGISTRY_SERVER_PASSWORD = var.acr_password
+
 
   }
 
