@@ -11,8 +11,8 @@ jobs:
 
     env:
       R2DBC_URL: ${{ secrets.R2DBC_URL }}
-      USERNAME_DEV: ${{ secrets.USERNAME_PROD }}
-      PASSWORD_DEV: ${{ secrets.PASSWORD_PROD }}
+      USERNAME_PROD: ${{ secrets.USERNAME_PROD }}
+      PASSWORD_PROD: ${{ secrets.PASSWORD_PROD }}
       SPRING_PROFILES_ACTIVE: prod
 
     steps:
