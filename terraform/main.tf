@@ -5,6 +5,16 @@ terraform {
       version = "~> 3.0"
     }
   }
+
+  # Backend para almacenar el estado de Terraform
+  backend "azurerm" {
+    resource_group_name   = "rg-tfstate"
+    storage_account_name  = "tfstateterraform95"
+    container_name        = "tfstate"
+    key                   = "terraform/terraform.tfstate"
+  }
+
+
 }
 
 provider "azurerm" {
