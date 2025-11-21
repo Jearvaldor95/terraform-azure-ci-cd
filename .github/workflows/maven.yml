@@ -32,6 +32,12 @@ jobs:
       - name: Run Tests
         run: mvn test
 
+      - name: Upload JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-jar
+          path: target/*.jar
+
   # 2️ Terraform - Infraestructura (solo si CI pasa)
   terraform:
     needs: ci
@@ -87,6 +93,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Download JAR
+        uses: actions/download-artifact@v4
+        with:
+          name: app-jar
+          path: target
 
       - name: Login Azure
         uses: azure/login@v1
