@@ -107,4 +107,5 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ secrets.APP_NAME }}
-          images: ${{ secrets.ACR_LOGIN_SERVER }}/terraform-jearvaldor:latest
+          images: webflux1acr.azurecr.io/terraform-jearvaldor:latest
+
