@@ -98,10 +98,10 @@ jobs:
           echo ${{ secrets.ACR_PASSWORD }} | docker login webflux1acr.azurecr.io -u ${{ secrets.ACR_USERNAME }} --password-stdin
 
       - name: Build Docker image
-        run: docker build -t terraform-jearvaldor:latest .
+        run: docker build -t webflux1acr.azurecr.io/terraform-jearvaldor:latest .
 
       - name: Push Docker image
-        run: docker push terraform-jearvaldor:latest
+        run: docker push webflux1acr.azurecr.io/terraform-jearvaldor:latest
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
